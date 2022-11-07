@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <title>algam</title>
+    <meta name='viewport' content='width=device-width, initial-scale=1'>
+    <script defer src='js/index.js'></script>
+    <script defer src='js/mapArrays.js'></script>
+    <script defer src='js/Sprite.js'></script>
+    <script defer src='js/Husk.js'></script>
+    <script defer src='js/Player.js'></script>
+    <script defer src='js/GameMap.js'></script>
+    <script src="https://unpkg.com/colyseus.js@^0.14.0/dist/colyseus.js"></script>
+    <link rel='stylesheet' type='text/css' media='screen' href='index.css'>
+
+
+</head>
+<body onload="init(60)">
+    <form onSubmit="sendMessage(event)">
+        <input type="text" id="chatInput" placeholder="press enter to chat!" autocomplete="off" style="opacity: 0; width: 200px"/>
+    </form>
+    <canvas id="foreground" width="100%" height="100%" onclick="confirmCapture()"></canvas>
+</body>
+</html>

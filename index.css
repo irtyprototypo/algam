@@ -1,0 +1,9 @@
+body{
+    margin: 0px;
+    background-color: bisque;
+    overflow: hidden;
+}
+
+#chatInput{
+    position: absolute;
+}
