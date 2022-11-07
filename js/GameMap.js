@@ -103,7 +103,7 @@ class GameMap{
     }
     
     loadMapTextures(){
-        for (var filename = 0; filename < 5; filename++) {
+        for (var filename = 0; filename < 13; filename++) {
             var image = document.createElement('img');
             image.src = '../assets/fps/' + filename + '.png';
             this.mapTextures.push(image);

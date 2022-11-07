@@ -1,4 +1,7 @@
-let rays = []
+let rays = [];
+let huskImg = new Image();
+huskImg.src = '../assets/static/sprite.png';
+
 
 class Player extends Sprite{
     constructor({
@@ -70,6 +73,7 @@ class Player extends Sprite{
             this.state = 'idle'
             this.midDepth = 0
             this.midWallHeight = 0
+            this.husk = {screen_x: 0, norm_dist: 0}
             
             this.direction = 1
             this.frameCurrent = 0
@@ -324,18 +328,18 @@ class Player extends Sprite{
 
 
         // wall collision
-        if (this.velocity.x < 0 && (this.map.gamMap[this.tileIndex-1] == 0 && this.center.x <= (this.ecb.west+this.width/3)))
+        if (this.velocity.x < 0 && (this.map.gamMap[this.tileIndex-1] != mapTileTypes.walkable && this.center.x <= (this.ecb.west+this.width/3)))
             this.velocity.x = 0;
-        if (this.velocity.x > 0 && (this.map.gamMap[this.tileIndex+1] == 0 && this.center.x >= (this.ecb.east-this.width/3)))
+        if (this.velocity.x > 0 && (this.map.gamMap[this.tileIndex+1] != mapTileTypes.walkable && this.center.x >= (this.ecb.east-this.width/3)))
             this.velocity.x = 0;
-        if (this.velocity.y < 0 && (this.map.gamMap[this.tileIndex-this.map.mapWidth] == 0 && this.center.y <= (this.ecb.north+this.width/3)))
+        if (this.velocity.y < 0 && (this.map.gamMap[this.tileIndex-this.map.mapWidth] != mapTileTypes.walkable && this.center.y <= (this.ecb.north+this.width/3)))
             this.velocity.y = 0;
-        if (this.velocity.y > 0 && (this.map.gamMap[this.tileIndex+this.map.mapWidth] == 0 && this.center.y >= (this.ecb.south-this.width/3)))
+        if (this.velocity.y > 0 && (this.map.gamMap[this.tileIndex+this.map.mapWidth] != mapTileTypes.walkable && this.center.y >= (this.ecb.south-this.width/3)))
             this.velocity.y = 0;
 
 
         if(this.applyGravity){
-            if(!this.isJumping && (this.map.gamMap[this.tileIndex + this.map.mapWidth] != 0 || this.center.y < this.ecb.south - this.height/3)){
+            if(!this.isJumping && (this.map.gamMap[this.tileIndex + this.map.mapWidth] == mapTileTypes.walkable || this.center.y < this.ecb.south - this.height/3)){
                 this.performPlatformingAction('fall');
             } else{
                 if(!this.isJumping)
@@ -407,21 +411,21 @@ class Player extends Sprite{
     }
 
     generateRays(){
-        var wallHeight, depth, vertDepth, horzDepth, rayAngle, midAngle, curCos, curSin, xVert, yVert, dx, dy, dDepth, xHorz, yHorz, index;
+        let texture = 0, textureX, textureY, wallHeight, depth, vertDepth, horzDepth, rayAngle, midAngle, curCos, curSin, xVert, yVert, dx, dy, dDepth, xHorz, yHorz, index;
         let theDeep = this.map.mapWidth * this.map.tileWidth;
             
-        this.map.canvas.fillStyle = `#434039`;
-        this.map.canvas.fillRect(0, 0, window.innerWidth, window.innerHeight/2 );
-        this.map.canvas.fillStyle = `#76736e`;
-        this.map.canvas.fillRect(0, window.innerHeight/2, window.innerWidth, window.innerHeight/2 );
+        this.canvas.fillStyle = `#434039`;
+        this.canvas.fillRect(0, 0, window.innerWidth, window.innerHeight/2 );
+        this.canvas.fillStyle = `#76736e`;
+        this.canvas.fillRect(0, window.innerHeight/2, window.innerWidth, window.innerHeight/2 );
         if(this.physics != 'fps') return;
 
         rayAngle = this.angle - this.fov/2;
         midAngle = this.angle + 2*3.14;
         // rayAngle = midAngle;
         
-        this.map.canvas.font = "30px Arial";
-        this.map.canvas.fillStyle = '#40D61A';
+        this.canvas.font = "30px Arial";
+        this.canvas.fillStyle = '#40D61A';
 
         for (let i=0; i < this.rayNum; i++){
             curCos = Math.cos(rayAngle);
@@ -438,10 +442,12 @@ class Player extends Sprite{
             for(let j=0;j<theDeep;j+=this.map.tileWidth){
                 index = Math.floor(xVert/this.map.tileWidth) + Math.floor(yVert/this.map.tileHeight) * this.map.mapHeight
                 // index = (curCos >= 0) ? index+=this.map.mapHeight : index
-                if(this.map.gamMap[index] == 0) break;
+                textureY = this.map.gamMap[index]
+                if(this.map.gamMap[index] != mapTileTypes.walkable) break;
                 xVert += dx
                 yVert += dy
                 vertDepth += dDepth;
+
             }
 
             // horizontal line detection
@@ -451,44 +457,61 @@ class Player extends Sprite{
             xHorz = this.center.x + horzDepth * curCos;
             dDepth = dy / curSin;
             dx = dDepth * curCos;
+            
 
             for(let j=0;j<theDeep;j+=this.map.tileHeight){
                 index = Math.floor(xHorz/this.map.tileWidth) + Math.floor(yHorz/this.map.tileHeight) * this.map.mapHeight
-                if(this.map.gamMap[index] == 0) break;
+                textureX = this.map.gamMap[index]
+                if(this.map.gamMap[index] != mapTileTypes.walkable) break;
                 xHorz += dx
                 yHorz += dy
                 horzDepth += dDepth;
+
                 
-                // this.map.canvas.beginPath();
-                // this.map.canvas.arc(xHorz, yHorz, 5, 0, 2*3.14);
-                // this.map.canvas.fill();
-                // this.map.canvas.stroke();
+                // this.canvas.beginPath();
+                // this.canvas.arc(xHorz, yHorz, 5, 0, 2*3.14);
+                // this.canvas.fill();
+                // this.canvas.stroke();
             }
 
             // depth decision
             if (vertDepth < horzDepth){
                 depth = vertDepth;
                 yVert %= 1;
+                texture = textureY;
             } else{
                 depth = horzDepth;
                 xHorz %= 1;
+                texture = textureX;
             }
+
             depth = Math.trunc(depth * Math.cos(this.angle - rayAngle));
             rays[i] = {x: ((this.center.x - this.mapOffset.x)  + depth * curCos), y: ((this.center.y - this.mapOffset.y)  + depth *  curSin)}
-            if(i == this.rayNum/2)
-                this.midDepth = depth
 
             wallHeight = Math.floor(window.innerHeight*30 / (depth + .00001))
-            if(i == this.rayNum/2)
+
+            if(i == this.rayNum/2){
                 this.midWallHeight = wallHeight
+                this.midDepth = depth
+            }
+
+            // if(texture != 0)
+            // console.log(texture)
+
+            // let c = Math.floor(rays[i].x / this.map.tileWidth)
+            // let r = Math.floor(rays[i].y / this.map.tileHeight)-1
+            // index = c + (r*this.map.mapWidth)
+            texture = (texture == undefined) ? 8 : texture;
 
             // draw walls
-            this.map.canvas.beginPath();
+            this.canvas.beginPath();
             let textureOffset = vertDepth < horzDepth ? rays[i].y : rays[i].x;
+            // console.log(rays[i].x/this.map.tileWidth, rays[i].y);
             textureOffset = Math.floor(textureOffset - Math.floor(textureOffset / this.map.tileWidth) * this.map.tileWidth);
-            // this.map.canvas.fillRect(i * window.innerWidth / this.rayNum, Math.trunc(window.innerHeight/2 - wallHeight/2), window.innerWidth*.8, wallHeight );
-            this.map.canvas.drawImage(
-                this.map.mapTextures[3],                            // img
+            // this.canvas.fillRect(i * window.innerWidth / this.rayNum, Math.trunc(window.innerHeight/2 - wallHeight/2), window.innerWidth*.8, wallHeight );
+            
+            this.canvas.drawImage(
+                this.map.mapTextures[texture+1],                            // img
                 textureOffset,                                      // src x offset
                 0,                                                  // src y offset
                 1/i,                                                // src img width
@@ -503,7 +526,6 @@ class Player extends Sprite{
         }
 
     }
-
 
 }
 

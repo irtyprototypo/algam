@@ -62,15 +62,14 @@ class Husk extends Sprite{
     }
 
 
-    update({x, y, angle, state}){
+    updateData({x, y, angle, state}){
         this.position.x = x;
         this.position.y = y;
         this.angle = angle;
         this.switchSprite(state)
-        ctxFG.fillText(`${this.sessionId}`, this.position.x - player.width/4, this.position.y - player.height/2)
 
         // this.drawHitBox();
-        super.update();
+        // super.update();
 
     }
 

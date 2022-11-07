@@ -159,13 +159,43 @@ function updateHusks(){
     if(player.isOnline)
         room.state.players.forEach( p =>{
             if(p.username != player.username && husks.get(p.sessionId)){
-                husks.get(p.sessionId).update({
+                husks.get(p.sessionId).updateData({
                     x: p.x + player.mapOffset.x
                     , y: p.y + player.mapOffset.y
                     , angle: p.angle
                     , state: p.actionState
-                })
+                });
                 // ctxFG.fillText(`${p.actionState}`, p.x + player.mapOffset.x - player.width/4, p.y + player.mapOffset.y-player.height/2)
+            
+            
+                let dx = p.x - player.position.x
+                let dy = p.y - player.position.y
+                let theta = Math.atan2(dy, dx)
+                let delta = theta - player.angle
+    
+                // removing on blind spot adds another.
+                // if ((dx > 0 && player.angle > Math.PI) || (dx < 0 && dy < 0))
+                //     delta += Math.PI*2
+                    
+                let delta_rays = delta / (player.fov / player.rayNum)
+                let screen_x = Math.trunc((Math.floor(player.rayNum/2) + delta_rays) * (window.innerWidth / player.rayNum))
+                let dist = Math.trunc(Math.hypot(dx, dy) - player.width/2)
+                let norm_dist = Math.trunc(dist * Math.cos(delta))
+    
+                // rough projection
+                if(inputMode == 'fps'){
+                    ctxFG.fillStyle = '#40D61A';
+                    ctxFG.beginPath();
+                    ctxFG.arc(screen_x, (window.innerHeight/2 + player.midWallHeight/2), 10, 0, 6.48)
+                    ctxFG.fill();
+                    ctxFG.stroke();
+                    player.husk.screen_x = screen_x;
+                    player.husk.norm_dist = norm_dist;
+                } else {
+                    husks.get(p.sessionId).update();
+                    ctxFG.fillText(`${p.sessionId}`, p.x + player.mapOffset.x - player.width/4, p.y + player.mapOffset.y - player.height/2)
+
+                }
             }
         });
 }
@@ -324,7 +354,7 @@ function confirmCapture(){
 }
 
 window.addEventListener('mousemove', e =>{
-    if(inputMode == 'fps'){
+    if(false && document.pointerLockElement == canvasFG && inputMode == 'fps'){
         if(e.movementX > 3 ){
             inputs.rotCW.pressed = true;
             inputs.rotCCW.pressed = false;
@@ -512,8 +542,8 @@ function drawDebugText(){
         , ["vel", [player.velocity.x, player.velocity.y]]
         , ["wh", [player.midWallHeight]]
         , ["depth", [player.midDepth]]
-        , ["temp", [player.temp]]
-        , ["temp2", [player.temp2]]
+        , ["s_x", [player.husk.screen_x]]
+        , ["dn", [player.husk.norm_dist]]
         // , ["r", [player.rays[0].x, player.rays[0].y]]
         // , ["temp", [player.temp]]
         // , ["off", [player.mapOffset.x, player.mapOffset.y]]

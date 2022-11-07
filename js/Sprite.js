@@ -74,7 +74,6 @@ class Sprite{
         this.draw();
         this.framesElapsed++;
 
-        
         if(this.framesElapsed % this.framesHold === 0){
             if(this.frameCurrent < this.framesMax -1)
                this.frameCurrent++;
@@ -113,7 +112,6 @@ class Sprite{
             this.image = this.sprites[dir].image
             this.framesMax = this.sprites[dir].framesMax
             this.frameCurrent = 0
-
         }
 
     }
