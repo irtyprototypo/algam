@@ -1,6 +1,7 @@
 let rays = [];
 let huskImg = new Image();
-huskImg.src = '../assets/static/sprite.png';
+huskImg.src = '../assets/static/ss.png';
+huskImg.maxFrames = 4;
 
 
 class Player extends Sprite{
@@ -74,8 +75,8 @@ class Player extends Sprite{
             this.midDepth = 0
             this.midWallHeight = 0
             this.husk = {screen_x: 0, norm_dist: 0}
+            this.targetBlockIndex = 0
             
-            this.direction = 1
             this.frameCurrent = 0
             this.framesElapsed = 0
             this.imgOffset = imgOffset
@@ -259,19 +260,19 @@ class Player extends Sprite{
         // draw casted rays
         if(this.physics == 'fps'){
             // draw facing angle
-            // this.canvas.beginPath();
-            // this.canvas.moveTo(this.center.x, this.center.y);
-            // this.canvas.lineTo(this.center.x + Math.cos(this.angle) * this.width/2, this.center.y + Math.sin(this.angle) * this.width/2)
-            // this.canvas.stroke();
+            this.canvas.beginPath();
+            this.canvas.moveTo(this.center.x, this.center.y);
+            this.canvas.lineTo(this.center.x + Math.cos(this.angle) * this.width/2, this.center.y + Math.sin(this.angle) * this.width/2)
+            this.canvas.stroke();
 
             // draw casted rays
-            // this.canvas.strokeStyle = '#00ffff';
-            // rays.forEach( r =>{
-            //     this.canvas.beginPath();
-            //     this.canvas.moveTo(this.center.x, this.center.y);
-            //     this.canvas.lineTo(r.x, r.y)
-            //     this.canvas.stroke();
-            // })
+            this.canvas.strokeStyle = '#00ffff';
+            rays.forEach( r =>{
+                this.canvas.beginPath();
+                this.canvas.moveTo(this.center.x, this.center.y);
+                this.canvas.lineTo(r.x, r.y)
+                this.canvas.stroke();
+            })
         } else{
 
             // draw outer body
@@ -396,7 +397,7 @@ class Player extends Sprite{
 
         this.runSpeed = {x: 4, y:4};
         this.rotSpeed = .05;
-        // this.rotSpeed = .0005;
+        // this.rotSpeed = .005;
         this.velocity.terminal = 8;
         this.applyGravity = false;
         this.isGrounded = true;
@@ -485,7 +486,7 @@ class Player extends Sprite{
                 texture = textureX;
             }
 
-            depth = Math.trunc(depth * Math.cos(this.angle - rayAngle));
+            // depth = Math.trunc(depth * Math.cos(this.angle - rayAngle));
             rays[i] = {x: ((this.center.x - this.mapOffset.x)  + depth * curCos), y: ((this.center.y - this.mapOffset.y)  + depth *  curSin)}
 
             wallHeight = Math.floor(window.innerHeight*30 / (depth + .00001))
@@ -493,28 +494,23 @@ class Player extends Sprite{
             if(i == this.rayNum/2){
                 this.midWallHeight = wallHeight
                 this.midDepth = depth
+                this.targetBlockIndex = index
+
             }
 
-            // if(texture != 0)
-            // console.log(texture)
-
-            // let c = Math.floor(rays[i].x / this.map.tileWidth)
-            // let r = Math.floor(rays[i].y / this.map.tileHeight)-1
-            // index = c + (r*this.map.mapWidth)
             texture = (texture == undefined) ? 8 : texture;
 
             // draw walls
             this.canvas.beginPath();
-            let textureOffset = vertDepth < horzDepth ? rays[i].y : rays[i].x;
-            // console.log(rays[i].x/this.map.tileWidth, rays[i].y);
+            let textureOffset = (vertDepth < horzDepth) ? rays[i].y : rays[i].x;
             textureOffset = Math.floor(textureOffset - Math.floor(textureOffset / this.map.tileWidth) * this.map.tileWidth);
-            // this.canvas.fillRect(i * window.innerWidth / this.rayNum, Math.trunc(window.innerHeight/2 - wallHeight/2), window.innerWidth*.8, wallHeight );
+            // this.canvas.fillText(`${i}`, rays[i].x, rays[i].y)
             
             this.canvas.drawImage(
                 this.map.mapTextures[texture+1],                            // img
                 textureOffset,                                      // src x offset
                 0,                                                  // src y offset
-                1/i,                                                // src img width
+                1/(window.innerWidth / this.rayNum),                                                // src img width
                 64,                                                 // src img hieght
                 i * window.innerWidth / this.rayNum,                // target x offset
                 Math.trunc(window.innerHeight/2 - wallHeight/2),    // target y offset
@@ -522,6 +518,20 @@ class Player extends Sprite{
                 wallHeight                                          // target height
             );
 
+            // if(this.targetBlockIndex == 160)
+            // this.canvas.drawImage(
+            //     huskImg,                            // img
+            //     textureOffset + (64 * (i % 1)),                                      // src x offset
+            //     0,                                                  // src y offset
+            //     1/(window.innerWidth / this.rayNum),                // src img width
+            //     64,                                                 // src img hieght
+            //     i * window.innerWidth / this.rayNum - this.width,                // target x offset
+            //     Math.trunc(window.innerHeight/2 - wallHeight/2),    // target y offset
+            //     window.innerWidth / this.rayNum,                    // target width
+            //     wallHeight   
+            // );
+
+            // if(i%64 == 0) this.canvas.fillText(`${i}`, i * window.innerWidth / this.rayNum, 100)
             rayAngle += this.stepAngle;
         }
 

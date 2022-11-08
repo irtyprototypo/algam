@@ -6,7 +6,7 @@ var frameCount = 0;
 var fps, fpsInterval, startTime, now, then, elapsed, currentFps;
 var gams = ['rpg', 'platformer', 'fps', 'idle', 'fishing', 'arcade/gamba', 'fighting', 'beat-em-up']
 var husks = new Map();
-var map, inputMode = gams[1];
+var map, inputMode = gams[2];
 var player;
 var gamePaused = false;
 const PLAY_ONLINE = true;
@@ -165,28 +165,33 @@ function updateHusks(){
                     , angle: p.angle
                     , state: p.actionState
                 });
-                // ctxFG.fillText(`${p.actionState}`, p.x + player.mapOffset.x - player.width/4, p.y + player.mapOffset.y-player.height/2)
-            
             
                 let dx = p.x - player.position.x
                 let dy = p.y - player.position.y
                 let theta = Math.atan2(dy, dx)
                 let delta = theta - player.angle
     
-                // removing on blind spot adds another.
-                // if ((dx > 0 && player.angle > Math.PI) || (dx < 0 && dy < 0))
-                //     delta += Math.PI*2
+                // removing one blind spot adds another.
+                if ((dx > 0 && player.angle > Math.PI) || (dx < 0 && dy < 0))
+                    delta += Math.PI*2
                     
                 let delta_rays = delta / (player.fov / player.rayNum)
                 let screen_x = Math.trunc((Math.floor(player.rayNum/2) + delta_rays) * (window.innerWidth / player.rayNum))
                 let dist = Math.trunc(Math.hypot(dx, dy) - player.width/2)
                 let norm_dist = Math.trunc(dist * Math.cos(delta))
     
+                let d2h = norm_dist
+                let d2w = player.midDepth
+                let floorPos = (window.innerHeight/2 + player.midWallHeight/2)
+                // let huskY = 1/(d2w)
+
+                // let uhhuh = (window.innerHeight/2 + player.midWallHeight/2) + (norm_dist/window.innerHeight)
+                // console.log(uhhuh);
                 // rough projection
                 if(inputMode == 'fps'){
                     ctxFG.fillStyle = '#40D61A';
                     ctxFG.beginPath();
-                    ctxFG.arc(screen_x, (window.innerHeight/2 + player.midWallHeight/2), 10, 0, 6.48)
+                    ctxFG.arc(screen_x, floorPos, 10, 0, 6.48)
                     ctxFG.fill();
                     ctxFG.stroke();
                     player.husk.screen_x = screen_x;
@@ -194,7 +199,6 @@ function updateHusks(){
                 } else {
                     husks.get(p.sessionId).update();
                     ctxFG.fillText(`${p.sessionId}`, p.x + player.mapOffset.x - player.width/4, p.y + player.mapOffset.y - player.height/2)
-
                 }
             }
         });
@@ -353,25 +357,25 @@ function confirmCapture(){
         canvasFG.requestPointerLock();
 }
 
-window.addEventListener('mousemove', e =>{
-    if(false && document.pointerLockElement == canvasFG && inputMode == 'fps'){
-        if(e.movementX > 3 ){
-            inputs.rotCW.pressed = true;
-            inputs.rotCCW.pressed = false;
-            player.lastInput = inputs.rotCW;
-            player.performFPSAction('rot_cw')
-        } else if (e.movementX < -3 ) {
-            inputs.rotCCW.pressed = true;
-            inputs.rotCW.pressed = false;
-            player.lastInput = inputs.rotCCW;
-            player.performFPSAction('rot_ccw')
-        } else {
-            player.performFPSAction('idle')
-            inputs.rotCW.pressed = false;
-            inputs.rotCCW.pressed = false;
-        }
-    }
-});
+// window.addEventListener('mousemove', e =>{
+//     if(document.pointerLockElement == canvasFG && inputMode == 'fps'){
+//         if(e.movementX > 3 ){
+//             inputs.rotCW.pressed = true;
+//             inputs.rotCCW.pressed = false;
+//             player.lastInput = inputs.rotCW;
+//             player.performFPSAction('rot_cw')
+//         } else if (e.movementX < -3 ) {
+//             inputs.rotCCW.pressed = true;
+//             inputs.rotCW.pressed = false;
+//             player.lastInput = inputs.rotCCW;
+//             player.performFPSAction('rot_ccw')
+//         } else {
+//             player.performFPSAction('idle')
+//             inputs.rotCW.pressed = false;
+//             inputs.rotCCW.pressed = false;
+//         }
+//     }
+// });
 
 
 window.addEventListener('keydown', e =>{
@@ -540,10 +544,10 @@ function drawDebugText(){
         // , ["e", [player.ecb.north, player.ecb.east, player.ecb.south, player.ecb.west]]
         , ["pos", [player.position.x, player.position.y]]
         , ["vel", [player.velocity.x, player.velocity.y]]
-        , ["wh", [player.midWallHeight]]
-        , ["depth", [player.midDepth]]
-        , ["s_x", [player.husk.screen_x]]
-        , ["dn", [player.husk.norm_dist]]
+        // , ["wh", [player.midWallHeight]]
+        , ["i", [player.targetBlockIndex]]
+        // , ["s_x", [player.husk.screen_x]]
+        // , ["dn", [player.husk.norm_dist]]
         // , ["r", [player.rays[0].x, player.rays[0].y]]
         // , ["temp", [player.temp]]
         // , ["off", [player.mapOffset.x, player.mapOffset.y]]
