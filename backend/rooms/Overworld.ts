@@ -11,28 +11,31 @@ export class Overworld extends Room<RoomState> {
     this.setState(new RoomState());
 
     this.onMessage("chat_message", (client, message) => {
-    console.log(`${this.roomId} 🌎 | ${client.sessionId}: ${message.str.toString()}`);
-    // this.broadcast("messages", `${client.sessionId} ${message}`);
-    // this.state.updateChat(message);
-  });
+      console.log(`${this.roomId} 🌎 | ${client.sessionId}: ${message.str.toString()}`);
+    
+      this.broadcast("chat_message", `${this.state.players.get(client.sessionId).username}: ${message.str.toString()}`);
 
-
-  this.onMessage("admin", (client, message) => {
-    switch(message.command){
-      case 'change_map':
-        // change later. currently cycling
-        let name = this.state.mapName.split('_')[0]
-        let num = (Number(this.state.mapName.split('_')[1])+1)%3
-        this.state.setMapName(`${name}_${num}`);
-
-        console.log(`${this.roomId} 🌎 | ${this.state.players.get(client.sessionId).username}: has updated the map to ${name}_${num}`);
-        this.broadcast("chat", `${this.state.players.get(client.sessionId).username} updated to map to ${name}_${num}`);
-        break;
-      default:
-        console.log(`${message.command}`);
-        break;
-      }
+      // this.broadcast("messages", `${client.sessionId} ${message}`);
+      // this.state.updateChat(message);
     });
+
+
+    this.onMessage("admin", (client, message) => {
+      switch(message.command){
+        case 'change_map':
+          // change later. currently cycling
+          let name = this.state.mapName.split('_')[0]
+          let num = (Number(this.state.mapName.split('_')[1])+1)%3
+          this.state.setMapName(`${name}_${num}`);
+
+          console.log(`${this.roomId} 🌎 | ${this.state.players.get(client.sessionId).username}: has updated the map to ${name}_${num}`);
+          this.broadcast("chat", `${this.state.players.get(client.sessionId).username} updated to map to ${name}_${num}`);
+          break;
+        default:
+          console.log(`${message.command}`);
+          break;
+        }
+      });
 
 
 
@@ -64,10 +67,8 @@ export class Overworld extends Room<RoomState> {
       //     break;
       //   }
       });
-  
-  
 
-}
+  }
 
   // Called every time a client joins
   onJoin(client: Client, options: any) {

@@ -10,10 +10,12 @@ var map, inputMode = gams[2];
 var player;
 var gamePaused = false;
 const PLAY_ONLINE = true;
+let mouseRotation = false, chatVisible = true, chatCloseTimer = 0;
 var client = new Colyseus.Client(`${window.location.protocol.replace("http", "ws")}//${window.document.location.host.replace(/:.*/, '')}:${31337}`);
 let room;
 let inputField, chatOpen = false;
 let mx = 0;
+let chat = [];
 
 ctxFG.strokeStyle = '#000';
 ctxFG.font = "15px Arial";
@@ -43,7 +45,6 @@ async function init(frameRate){
     });
 
 
-    console.log();
     if(PLAY_ONLINE)
         try{
             room = await client.joinOrCreate("Overworld", {username: player.username})
@@ -51,8 +52,8 @@ async function init(frameRate){
             player.sessionId = room.sessionId;
             player.isOnline = true;
 
-            room.onMessage('chat', m =>{
-                console.log(m);
+            room.onMessage('chat_message', m =>{
+                chat.unshift(m)
             })
         
             room.onStateChange(s =>{
@@ -62,9 +63,9 @@ async function init(frameRate){
                 }
             })
             
-            room.onMessage('admin', m =>{
-                console.log(m);
-            })
+            // room.onMessage('admin', m =>{
+            //     console.log(m);
+            // })
 
         } catch (e){ console.error(e); }
 
@@ -100,6 +101,10 @@ function animate(){
     
         if (debuging)
             drawDebugText();
+
+        if(chatVisible && (now - chatCloseTimer < 10000))
+            drawChat();
+
         
         if(!chatOpen || document.activeElement != inputField)
             switch(inputMode){
@@ -206,43 +211,51 @@ function updateHusks(){
 
 
 
-function showChat(){
+function showChatField(){
+    chatVisible = true;
     chatOpen = true;
     inputField.style.opacity = 1;
 
     inputField.focus();
     inputField.value = "";
 
-    // console.log(room.state.players);
-
-
-    // inputField.style.left = `${window.innerWidth - String(inputField.width).substr(0, 2)}px`;
-    inputField.style.left = `${window.innerWidth - 225}px`;
-    inputField.style.top = `${250}px`;
-    
+    inputField.style.left = `${10}px`;
+    inputField.style.top = `${235}px`;
 }
-function hideChat(){
+
+function hideChatField(){
+    chatCloseTimer = Date.now();
     chatOpen = false;
     inputField.style.opacity = 0;
     inputField.value ="";
-
-    // inputField.style.left = `${window.innerWidth - 225}px`;
-    // inputField.style.top = `${250}px`;
 }
 
 function sendMessage(event) {
     event.preventDefault();
     let inputStr = inputField.value
 
-    room.send('chat_message', {
-        pid: player.sessionId,
-        str: `${inputStr}`
-    });
+    if(inputStr)
+        room.send('chat_message', {
+            pid: player.sessionId,
+            str: `${inputStr}`
+        });
 
-
-    console.log(inputStr);
     inputField.value ="";
-    hideChat();
+    hideChatField();
+}
+
+function drawChat(){
+    if(chat)
+        chat.forEach( (m, index) => {
+
+            let w = ctxFG.measureText(m).width;
+            ctxFG.fillStyle = '#423a38';
+            ctxFG.fillRect(5, 205 - (index*25), w+10, 25)
+
+            ctxFG.fillStyle = '#fff';
+            ctxFG.fillText(`${m}`, 10, 225 - (index*25))
+
+        });
 }
 
 function updatePhysics(type){
@@ -356,33 +369,33 @@ function confirmCapture(){
     if(inputMode == 'fps')
         canvasFG.requestPointerLock();
 }
-
-// window.addEventListener('mousemove', e =>{
-//     if(document.pointerLockElement == canvasFG && inputMode == 'fps'){
-//         if(e.movementX > 3 ){
-//             inputs.rotCW.pressed = true;
-//             inputs.rotCCW.pressed = false;
-//             player.lastInput = inputs.rotCW;
-//             player.performFPSAction('rot_cw')
-//         } else if (e.movementX < -3 ) {
-//             inputs.rotCCW.pressed = true;
-//             inputs.rotCW.pressed = false;
-//             player.lastInput = inputs.rotCCW;
-//             player.performFPSAction('rot_ccw')
-//         } else {
-//             player.performFPSAction('idle')
-//             inputs.rotCW.pressed = false;
-//             inputs.rotCCW.pressed = false;
-//         }
-//     }
-// });
+// rotation breaks on alt-tab
+window.addEventListener('mousemove', e =>{
+    if(mouseRotation && document.pointerLockElement == canvasFG && inputMode == 'fps'){
+        if(e.movementX > 3 ){
+            inputs.rotCW.pressed = true;
+            inputs.rotCCW.pressed = false;
+            player.lastInput = inputs.rotCW;
+            player.performFPSAction('rot_cw')
+        } else if (e.movementX < -3 ) {
+            inputs.rotCCW.pressed = true;
+            inputs.rotCW.pressed = false;
+            player.lastInput = inputs.rotCCW;
+            player.performFPSAction('rot_ccw')
+        } else {
+            player.performFPSAction('idle')
+            inputs.rotCW.pressed = false;
+            inputs.rotCCW.pressed = false;
+        }
+    }
+});
 
 
 window.addEventListener('keydown', e =>{
     // console.log(e.code)
     switch(e.code){
         case 'Escape':
-            this.hideChat();
+            this.hideChatField();
             break;
         case 'KeyD':
             inputs.right.pressed = true;
@@ -437,15 +450,18 @@ window.addEventListener('keyup', e =>{
     switch(e.code){
         case 'KeyT':
             if(player.isOnline && !chatOpen)
-                this.showChat();
+                this.showChatField();
             else if (document.activeElement != inputField)
-                this.hideChat();
+                this.hideChatField();
             break;
-        case 'KeyH':
-            if(player.isOnline)
-                room.state.players.forEach( p =>{
-                    console.log(p.username)
-                });
+        // case 'KeyH':
+        //     if(player.isOnline)
+        //         room.state.players.forEach( p =>{
+        //             console.log(p.username)
+        //         });
+            // break;
+        case 'KeyR':
+            mouseRotation = (mouseRotation) ? false : true;
             break;
         case 'KeyD':
             inputs.right.pressed = false;
@@ -560,5 +576,5 @@ function drawDebugText(){
         , ["👊", inputs.attack.pressed], ["🛡", inputs.block.pressed], ["🚀", inputs.jump.pressed]
     ]
 
-    for (i=0;i < deb.length;i++){ ctxFG.fillText(`${deb[i][0]}: ${deb[i][1]}`, 10, `${25+(25*i)}`); }
+    for (i=0;i < deb.length;i++){ ctxFG.fillText(`${deb[i][0]}: ${deb[i][1]}`, window.innerWidth - 150, `${25+(25*i)}`); }
 }
